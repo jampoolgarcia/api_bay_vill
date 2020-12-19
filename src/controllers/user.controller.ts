@@ -8,7 +8,7 @@ import {
 } from '@loopback/repository';
 import {
   del, get,
-  getModelSchemaRef, param,
+  getModelSchemaRef, HttpErrors, param,
 
 
   patch, post,
@@ -22,13 +22,50 @@ import {
 } from '@loopback/rest';
 import {User} from '../models';
 import {UserRepository} from '../repositories';
+import {AuthService} from '../services/auth.service';
 import {EncryptDecrypt} from '../services/encrypt-decrypt.service';
 
+class Credencials {
+  userName: string;
+  password: string;
+}
+
 export class UserController {
+
+  authService: AuthService;
   constructor(
     @repository(UserRepository)
     public userRepository: UserRepository,
-  ) { }
+  ) {
+    this.authService = new AuthService(this.userRepository)
+  }
+
+
+  @post('/user/login', {
+    responses: {
+      '200': {
+        description: 'Login for user'
+      },
+    },
+  })
+  async login(
+    @requestBody() credencials: Credencials
+  ): Promise<Object> {
+    let user = await this.authService.Identify(credencials.userName, credencials.password);
+    if (user) {
+      if (user.isActive) {
+        let tk = await this.authService.GenerateToken(user);
+        return {
+          user,
+          token: tk
+        }
+      } else {
+        throw new HttpErrors[401]("El usuario no se encuentra activado.")
+      }
+    } else {
+      throw new HttpErrors[401]("El usuario o la contraseña es invalido.")
+    }
+  }
 
   @post('/user', {
     responses: {
