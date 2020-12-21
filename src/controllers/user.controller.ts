@@ -1,3 +1,4 @@
+import {authenticate} from '@loopback/authentication';
 import {
   Count,
   CountSchema,
@@ -24,6 +25,7 @@ import {User} from '../models';
 import {UserRepository} from '../repositories';
 import {AuthService} from '../services/auth.service';
 import {EncryptDecrypt} from '../services/encrypt-decrypt.service';
+
 
 class Credencials {
   userName: string;
@@ -94,6 +96,7 @@ export class UserController {
     return u;
   }
 
+  @authenticate("UserTokenStrategy", "AdminTokenStrategy")
   @get('/user/count', {
     responses: {
       '200': {
@@ -108,6 +111,7 @@ export class UserController {
     return this.userRepository.count(where);
   }
 
+  @authenticate("AdminTokenStrategy")
   @get('/user', {
     responses: {
       '200': {
