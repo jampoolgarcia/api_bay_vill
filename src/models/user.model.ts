@@ -45,6 +45,19 @@ export class User extends Entity {
   })
   isActive: boolean;
 
+  @property({
+    type: 'array',
+    itemType: 'number',
+    required: true,
+  })
+  questions: number[];
+
+  @property({
+    type: 'array',
+    itemType: 'string',
+    required: true,
+  })
+  replies: string[];
 
   constructor(data?: Partial<User>) {
     super(data);

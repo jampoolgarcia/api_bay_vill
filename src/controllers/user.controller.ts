@@ -23,14 +23,10 @@ import {
 } from '@loopback/rest';
 import {User} from '../models';
 import {UserRepository} from '../repositories';
-import {AuthService} from '../services/auth.service';
+import {AuthService, Credencials, UserChangePassword, UserReset} from '../services/auth.service';
 import {EncryptDecrypt} from '../services/encrypt-decrypt.service';
 
 
-class Credencials {
-  userName: string;
-  password: string;
-}
 
 export class UserController {
 
@@ -42,7 +38,53 @@ export class UserController {
     this.authService = new AuthService(this.userRepository)
   }
 
+  /*
+   EndPoint @post(/user/change-password)
+   Recibe un string que contiene la password nueva
+   Nota: este Endpoint está protegido por estrategias
+    de seguridad con el nombre: "AdminTokenStrategy”
+     "UserTokenStrategy”
+  */
+  @authenticate("UserTokenStrategy", "AdminTokenStrategy")
+  @post('/user/change-password', {
+    responses: {
+      '200': {
+        description: 'reset password for user'
+      },
+    },
+  })
+  async changePassword(
+    @requestBody() userChangePassword: UserChangePassword
+  ): Promise<boolean> {
+    let r = await this.authService.ChangePassword(userChangePassword);
+    return r;
+  }
 
+  /*
+   EndPoint @post(/user/reset-password)
+   Recibe un objeto de tipo UserReset que contiene
+   los datos necesarios para el cambio de contraseña en caso de olvido
+  */
+  @post('/user/reset-password', {
+    responses: {
+      '200': {
+        description: 'reset password for user'
+      },
+    },
+  })
+  async resetPassword(
+    @requestBody() UserReset: UserReset
+  ): Promise<boolean> {
+    let r = await this.authService.VerifyUser(UserReset);
+    return r;
+  }
+
+  /*
+    EndPoint @post(/user/login)
+    Realiza todo lo necesario para el inicio de
+    sesión, recibe un objeto del tipo credencials y devolviendo
+    un usuario con token para usar como acceso en los otro endpoint
+   */
   @post('/user/login', {
     responses: {
       '200': {
@@ -51,9 +93,12 @@ export class UserController {
     },
   })
   async login(
-    @requestBody() credencials: Credencials
+    @requestBody({
+      description: 'Credencials',
+      required: true
+    }) credencials: Credencials
   ): Promise<Object> {
-    let user = await this.authService.Identify(credencials.userName, credencials.password);
+    let user = await this.authService.Identify(credencials);
     if (user) {
       if (user.isActive) {
         let tk = await this.authService.GenerateToken(user);
@@ -65,10 +110,15 @@ export class UserController {
         throw new HttpErrors[401]("El usuario no se encuentra activado.")
       }
     } else {
-      throw new HttpErrors[401]("El usuario o la contraseña es invalido.")
+      throw new HttpErrors[401]("El usuario o la clave es invalido.")
     }
   }
 
+  /*
+   EndPoint @post('/user')
+   Realiza todo lo necesario para la creación de un
+   usuario recibiendo un objeto del tipo usuario
+   */
   @post('/user', {
     responses: {
       '200': {
@@ -96,7 +146,11 @@ export class UserController {
     return u;
   }
 
-  @authenticate("UserTokenStrategy", "AdminTokenStrategy")
+
+  /*
+  EndPoint @get(/user/count)
+  Devuelve la cantidad en número de usuarios
+  */
   @get('/user/count', {
     responses: {
       '200': {
@@ -111,6 +165,12 @@ export class UserController {
     return this.userRepository.count(where);
   }
 
+  /*
+    EndPoint @get(/user)
+    Devuelve la lista de usuarios.
+    Nota: este Endpoint está protegido por una estrategia
+    de seguridad con el nombre: "AdminTokenStrategy”
+  */
   @authenticate("AdminTokenStrategy")
   @get('/user', {
     responses: {
@@ -133,6 +193,15 @@ export class UserController {
     return this.userRepository.find(filter);
   }
 
+  /*
+    EndPoint @patch(/user)
+    recibe un objeto de tipo usuario con los campos que
+    se desean modificar y una condición para indicar a
+    que usuario se va a modificar.
+    Nota: este Endpoint está protegido por una estrategia
+    de seguridad con el nombre: "AdminTokenStrategy”
+  */
+  @authenticate("AdminTokenStrategy")
   @patch('/user', {
     responses: {
       '200': {
@@ -155,6 +224,13 @@ export class UserController {
     return this.userRepository.updateAll(user, where);
   }
 
+  /*
+    EndPoint @get(/user/{id})
+    Devuelve el usuario con el id indicado en el url.
+    Nota: este Endpoint está protegido por una estrategia
+    de seguridad con el nombre: "AdminTokenStrategy”
+  */
+  @authenticate("AdminTokenStrategy")
   @get('/user/{id}', {
     responses: {
       '200': {
@@ -174,6 +250,15 @@ export class UserController {
     return this.userRepository.findById(id, filter);
   }
 
+
+  /*
+   EndPoint @patch(/user/{id})
+   Recibe un objeto de tipo usuario y modifica los campos
+   al usuario con el id indicado en el url.
+   Nota: este Endpoint está protegido por una estrategia
+   de seguridad con el nombre: "AdminTokenStrategy”
+ */
+  @authenticate("AdminTokenStrategy")
   @patch('/user/{id}', {
     responses: {
       '204': {
@@ -195,6 +280,14 @@ export class UserController {
     await this.userRepository.updateById(id, user);
   }
 
+  /*
+   EndPoint @put(/user/{id})
+   Recibe un objeto de tipo usuario y modifica
+   al usuario con el id indicado en el url.
+   Nota: este Endpoint está protegido por una estrategia
+   de seguridad con el nombre: "AdminTokenStrategy”
+ */
+  @authenticate("AdminTokenStrategy")
   @put('/user/{id}', {
     responses: {
       '204': {
@@ -209,6 +302,14 @@ export class UserController {
     await this.userRepository.replaceById(id, user);
   }
 
+
+  /*
+    EndPoint @del(/user/{id})
+    Elimina el usuario con el id indicado en el url.
+    Nota: este Endpoint está protegido por una estrategia
+    de seguridad con el nombre: "AdminTokenStrategy”
+  */
+  @authenticate("AdminTokenStrategy")
   @del('/user/{id}', {
     responses: {
       '204': {
