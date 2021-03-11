@@ -194,6 +194,32 @@ export class UserController {
   }
 
   /*
+   EndPoint @get(/user)
+   Devuelve un error 404 o las preguntas del usuario con el userName igresado.
+ */
+  @get('/user/{userName}', {
+    responses: {
+      '200': {
+        description: 'User model instances',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'number[]',
+            },
+          },
+        },
+      },
+    },
+  })
+  async findOneUser(
+    @param.path.string('userName') userName: string,
+  ): Promise<number[]> {
+    let user: User | null = await this.userRepository.findOne({where: {"userName": userName}});
+    if (user == null) throw new HttpErrors[404]("El usuario ingresado no se encuentra registrado.")
+    return user.questions;
+  }
+
+  /*
     EndPoint @patch(/user)
     recibe un objeto de tipo usuario con los campos que
     se desean modificar y una condición para indicar a
