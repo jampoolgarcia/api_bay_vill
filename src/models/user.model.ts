@@ -1,4 +1,5 @@
-import {Entity, model, property} from '@loopback/repository';
+import {Entity, hasMany, model, property} from '@loopback/repository';
+import {Turn} from './turn.model';
 
 @model()
 export class User extends Entity {
@@ -24,6 +25,9 @@ export class User extends Entity {
   @property({
     type: 'string',
     required: true,
+    index: {
+      unique: true
+    }
   })
   userName: string;
 
@@ -35,13 +39,13 @@ export class User extends Entity {
 
   @property({
     type: 'number',
-    default: 1
+    default: 1,
   })
   role: number;
 
   @property({
     type: 'boolean',
-    default: false
+    default: false,
   })
   isActive: boolean;
 
@@ -58,6 +62,9 @@ export class User extends Entity {
     required: true,
   })
   replies: string[];
+
+  @hasMany(() => Turn)
+  turn: Turn[];
 
   constructor(data?: Partial<User>) {
     super(data);

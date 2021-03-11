@@ -23,7 +23,7 @@ import {
 } from '@loopback/rest';
 import {User} from '../models';
 import {UserRepository} from '../repositories';
-import {AuthService, Credencials, UserChangePassword, UserReset} from '../services/auth.service';
+import {AuthService, Credentials, UserChangePassword, UserReset} from '../services/auth.service';
 import {EncryptDecrypt} from '../services/encrypt-decrypt.service';
 
 
@@ -82,7 +82,7 @@ export class UserController {
   /*
     EndPoint @post(/user/login)
     Realiza todo lo necesario para el inicio de
-    sesión, recibe un objeto del tipo credencials y devolviendo
+    sesión, recibe un objeto del tipo credentials y devolviendo
     un usuario con token para usar como acceso en los otro endpoint
    */
   @post('/user/login', {
@@ -94,11 +94,11 @@ export class UserController {
   })
   async login(
     @requestBody({
-      description: 'Credencials',
+      description: 'Credentials',
       required: true
-    }) credencials: Credencials
+    }) credentials: Credentials
   ): Promise<Object> {
-    let user = await this.authService.Identify(credencials);
+    let user = await this.authService.Identify(credentials);
     if (user) {
       if (user.isActive) {
         let tk = await this.authService.GenerateToken(user);

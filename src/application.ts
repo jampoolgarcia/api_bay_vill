@@ -1,5 +1,6 @@
 
 import {AuthenticationComponent, registerAuthenticationStrategy} from '@loopback/authentication';
+import {JWTAuthenticationComponent} from '@loopback/authentication-jwt';
 import {BootMixin} from '@loopback/boot';
 import {ApplicationConfig} from '@loopback/core';
 import {RepositoryMixin} from '@loopback/repository';
@@ -17,22 +18,25 @@ import {UserTokenStrategy} from './strategies/userTokenStrategy';
 
 export {ApplicationConfig};
 
+
 export class Application extends BootMixin(
   ServiceMixin(RepositoryMixin(RestApplication)),
 ) {
   constructor(options: ApplicationConfig = {}) {
     super(options);
 
-
-
     // Set up default home page
-    this.static('/', path.join(__dirname, '../public'));
+    this.static('/', path.join(__dirname, '../public/dist'));
+
+    this.basePath('api');
 
     // Customize @loopback/rest-explorer configuration here
     this.configure(RestExplorerBindings.COMPONENT).to({
       path: '/explorer',
     });
     this.component(RestExplorerComponent);
+
+
 
     this.projectRoot = __dirname;
 
@@ -41,6 +45,9 @@ export class Application extends BootMixin(
     this.component(AuthenticationComponent);
     registerAuthenticationStrategy(this, UserTokenStrategy);
     registerAuthenticationStrategy(this, AdminTokenStrategy);
+
+    // Mount jwt component
+    this.component(JWTAuthenticationComponent);
 
     // Set up the custom sequence
     this.sequence(MySequence);

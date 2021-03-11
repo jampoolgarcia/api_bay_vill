@@ -1,3 +1,4 @@
+import {UserService} from '@loopback/authentication';
 import {model, property, repository} from '@loopback/repository';
 import {HttpErrors, Request} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
@@ -6,6 +7,8 @@ import {User} from '../models';
 import {UserRepository} from '../repositories';
 import {EncryptDecrypt} from './encrypt-decrypt.service';
 const jwt = require("jsonwebtoken");
+
+
 
 /*
   representa un objeto del tipo UserChangePassword
@@ -26,7 +29,7 @@ export class UserChangePassword {
  es necesario para el proceso de login.
 */
 @model()
-export class Credencials {
+export class Credentials {
   @property()
   userName: string;
   @property()
@@ -56,18 +59,47 @@ export class UserReset {
   password: string;
 }
 
-export class AuthService {
+export class AuthService implements UserService<User, Credentials> {
 
   constructor(
     @repository(UserRepository)
     public userRepository: UserRepository
   ) { }
 
+
+  async verifyCredentials(credentials: Credentials): Promise<User> {
+    const invalidCredentialsError = 'el nombre o la clave de usuario no coinciden';
+
+    let user = await this.userRepository.findOne({
+      where: {userName: credentials.userName},
+    });
+    if (user != null) {
+      let cryptPass = new EncryptDecrypt().Encrypt(credentials.password);
+      if (user.password == cryptPass) {
+        return user;
+      }
+    }
+    if (!user) {
+      throw new HttpErrors.Unauthorized(invalidCredentialsError);
+    }
+
+    return user;
+  }
+
+  convertToUserProfile(user: User): UserProfile {
+    return {
+      [securityId]: user.id ? user.id.toString() : '',
+      name: user.lastName,
+      id: user.id,
+      email: user.userName,
+    };
+  }
+
   /*
     Realiza el proceso de login, recibiendo un userName y una clave
     y retornando un usuario o false
   */
-  async Identify(credencials: Credencials): Promise<User | false> {
+  async Identify(credencials: Credentials): Promise<User | false> {
     let user = await this.UserExist(credencials.userName);
     if (user != null) {
       let cryptPass = new EncryptDecrypt().Encrypt(credencials.password);
