@@ -1,8 +1,8 @@
-import {Entity, model, property, belongsTo, hasMany} from '@loopback/repository';
+import {belongsTo, Entity, hasMany, model, property} from '@loopback/repository';
 import {Box} from './box.model';
-import {User} from './user.model';
 import {Consultation} from './consultation.model';
 import {Payment} from './payment.model';
+import {User} from './user.model';
 
 @model()
 export class Turn extends Entity {
@@ -31,8 +31,7 @@ export class Turn extends Entity {
   startBalance: number;
 
   @property({
-    type: 'number',
-    default: 0,
+    type: 'number'
   })
   endBalance?: number;
 
@@ -42,11 +41,16 @@ export class Turn extends Entity {
   @belongsTo(() => User)
   userId: string;
 
+  @property({
+    type: 'string',
+  })
+  token: string;
+
   @hasMany(() => Consultation)
-  consultation: Consultation[];
+  consultation?: Consultation[];
 
   @hasMany(() => Payment)
-  payments: Payment[];
+  payments?: Payment[];
 
   constructor(data?: Partial<Turn>) {
     super(data);

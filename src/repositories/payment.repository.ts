@@ -1,8 +1,7 @@
-import {inject, Getter} from '@loopback/core';
-import {DefaultCrudRepository, repository, BelongsToAccessor} from '@loopback/repository';
+import {Getter, inject} from '@loopback/core';
+import {BelongsToAccessor, DefaultCrudRepository, repository} from '@loopback/repository';
 import {DbDataSource} from '../datasources';
-import {Payment, PaymentRelations, PaymentTypes, Doctor, Nurse, Turn} from '../models';
-import {PaymentTypesRepository} from './payment-types.repository';
+import {Doctor, Nurse, Payment, PaymentRelations, Turn} from '../models';
 import {DoctorRepository} from './doctor.repository';
 import {NurseRepository} from './nurse.repository';
 import {TurnRepository} from './turn.repository';
@@ -13,8 +12,6 @@ export class PaymentRepository extends DefaultCrudRepository<
   PaymentRelations
 > {
 
-  public readonly paymentTypes: BelongsToAccessor<PaymentTypes, typeof Payment.prototype.id>;
-
   public readonly doctor: BelongsToAccessor<Doctor, typeof Payment.prototype.id>;
 
   public readonly nurse: BelongsToAccessor<Nurse, typeof Payment.prototype.id>;
@@ -22,7 +19,7 @@ export class PaymentRepository extends DefaultCrudRepository<
   public readonly turn: BelongsToAccessor<Turn, typeof Payment.prototype.id>;
 
   constructor(
-    @inject('datasources.db') dataSource: DbDataSource, @repository.getter('PaymentTypesRepository') protected paymentTypesRepositoryGetter: Getter<PaymentTypesRepository>, @repository.getter('DoctorRepository') protected doctorRepositoryGetter: Getter<DoctorRepository>, @repository.getter('NurseRepository') protected nurseRepositoryGetter: Getter<NurseRepository>, @repository.getter('TurnRepository') protected turnRepositoryGetter: Getter<TurnRepository>,
+    @inject('datasources.db') dataSource: DbDataSource, @repository.getter('DoctorRepository') protected doctorRepositoryGetter: Getter<DoctorRepository>, @repository.getter('NurseRepository') protected nurseRepositoryGetter: Getter<NurseRepository>, @repository.getter('TurnRepository') protected turnRepositoryGetter: Getter<TurnRepository>,
   ) {
     super(Payment, dataSource);
     this.turn = this.createBelongsToAccessorFor('turn', turnRepositoryGetter,);
@@ -31,7 +28,5 @@ export class PaymentRepository extends DefaultCrudRepository<
     this.registerInclusionResolver('nurse', this.nurse.inclusionResolver);
     this.doctor = this.createBelongsToAccessorFor('doctor', doctorRepositoryGetter,);
     this.registerInclusionResolver('doctor', this.doctor.inclusionResolver);
-    this.paymentTypes = this.createBelongsToAccessorFor('paymentTypes', paymentTypesRepositoryGetter,);
-    this.registerInclusionResolver('paymentTypes', this.paymentTypes.inclusionResolver);
   }
 }

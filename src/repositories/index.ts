@@ -9,7 +9,7 @@ export * from './medicine.repository';
 export * from './nurse.repository';
 export * from './nursing-service.repository';
 export * from './patient.repository';
-export * from './payment-types.repository';
+export * from './payment.repository';
 export * from './product.repository';
 export * from './specialty.repository';
 export * from './test-lab.repository';
@@ -17,4 +17,4 @@ export * from './ticket.repository';
 export * from './turn.repository';
 export * from './user.repository';
 
-export * from './payment.repository';
+

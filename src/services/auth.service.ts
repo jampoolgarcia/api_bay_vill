@@ -20,8 +20,6 @@ export class UserChangePassword {
   password: string;
   @property()
   newPassword: string;
-  @property()
-  user: User;
 }
 
 /*
@@ -143,17 +141,18 @@ export class AuthService implements UserService<User, Credentials> {
 
 
   // realiza el proceso de cambio de clave.
-  async ChangePassword(userChange: UserChangePassword): Promise<boolean> {
+  async ChangePassword(id: string, userChange: UserChangePassword): Promise<boolean> {
+
+    let user: User | null = await this.userRepository.findOne({where: {id}});
+
+    if (!user) throw new HttpErrors[403]("Los datos proporcionados no coinciden con los de un usuario registrado.");
 
     let password = new EncryptDecrypt().Encrypt(userChange.password)
 
-    if (userChange.user.password == password) {
-      userChange.user.password = new EncryptDecrypt().Encrypt(userChange.newPassword);
-      this.userRepository.replaceById(userChange.user.id, userChange.user);
-      return true;
-    } else {
-      throw new HttpErrors[403]("La clave ingresada es incorrecta.")
-    }
+    if (user.password != password) throw new HttpErrors[403]("La clave ingresada es incorrecta.");
+    user.password = new EncryptDecrypt().Encrypt(userChange.newPassword);
+    this.userRepository.replaceById(user.id, user);
+    return true;
 
   }
 

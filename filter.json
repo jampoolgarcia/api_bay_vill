@@ -1,0 +1,34 @@
+{
+    "include": [{
+            "relation": "specialty"
+        },
+        {
+            "relation": "payments",
+            "scope": {
+                "order": "ASC",
+                "include": [{
+                    "relation": "turn",
+                    "scope": {
+                        "include": [{
+                            "relation": "user"
+                        }]
+                    }
+                }]
+            }
+        },
+        {
+            "relation": "consultation",
+            "scope": {
+                "order": "ASC",
+                "include": [{
+                    "relation": "turn",
+                    "scope": {
+                        "include": [{
+                            "relation": "user"
+                        }]
+                    }
+                }]
+            }
+        }
+    ]
+}

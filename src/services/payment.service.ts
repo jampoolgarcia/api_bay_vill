@@ -1,39 +1,64 @@
-import {Doctor, Nurse, Payment} from '../models';
-import {DoctorRepository, NurseRepository} from '../repositories';
+import {repository} from '@loopback/repository';
+import {HttpErrors} from '@loopback/rest';
+import {Payment} from '../models';
+import {BoxRepository, DoctorRepository, NurseRepository, PaymentRepository, TurnRepository} from '../repositories';
 
 export class PaymentService {
 
 
-  constructor() {
+  constructor(
+    @repository(TurnRepository)
+    public turnRepo: TurnRepository,
+    @repository(BoxRepository)
+    public boxRepo: BoxRepository,
+    @repository(PaymentRepository)
+    public payRepo: PaymentRepository,
+  ) {
 
   }
 
-  async addPaymentEntity(id: string, payment: Payment, repository: DoctorRepository | NurseRepository): Promise<Doctor | Nurse> {
+  async addPaymentEntity(id: string, payment: Payment, repository: DoctorRepository | NurseRepository): Promise<boolean> {
 
-    let entity = await repository.findById(id, {
-      include: [
-        {
-          relation: 'payments',
-          scope: {
-            include: [{relation: 'PaymentTypes'}],
-          },
-        },
-      ],
-    });
-    // entity.paid = entity.paid ?? [];
-    // entity.paid?.push(payment);
+    let isProcess = false;
 
-    // if (payment) {
-    //   if (entity.balance !== null && entity.balance !== undefined) {
-    //     if (payment.paid > entity.balance) throw new HttpErrors[400]("El pago supera el saldo existente");
-    //   } else {
-    //     throw new HttpErrors[400]("No existe la propiedad balance")
-    //   }
+    let turn = await this.turnRepo.findById(payment.turnId);
 
-    //   entity.balance -= payment.paid;
-    // }
-    // await repository.updateById(id, entity);
-    return entity;
+    if (!turn)
+      throw new HttpErrors[404]("Ha ocurrido un error al obtener el turno.");
+
+    let box = await this.boxRepo.findById(turn.boxId);
+
+    if (!box)
+      throw new HttpErrors[500]("Ha ocurrido un error al obtener la caja registradora.");
+
+    let entity = await repository.findById(id);
+
+    if (!entity)
+      throw new HttpErrors[500]("Ha ocurrido un error al obtener la entidad.");
+
+    if (entity.balance == undefined)
+      throw new HttpErrors[500]("Ha ocurrido un error al obtener el balance.");
+
+    if (entity.balance < payment.paid)
+      throw new HttpErrors[404]("La entidad no posee el balance suficiente.");
+
+    if (box.balance < payment.paid)
+      throw new HttpErrors[404]("No existe un saldo suficiente para realizar el pago.");
+
+    box.balance -= payment.paid;
+    entity.balance -= payment.paid;
+
+    await Promise.all([
+      this.boxRepo.updateById(box.id, box),
+      repository.updateById(entity.id, entity),
+      this.payRepo.create(payment)
+    ]).then(res => {
+      isProcess = true;
+    })
+
+    return isProcess;
+
   }
+
 
 }

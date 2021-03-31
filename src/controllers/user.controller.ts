@@ -21,21 +21,29 @@ import {
 
   requestBody
 } from '@loopback/rest';
-import {User} from '../models';
-import {UserRepository} from '../repositories';
+import {Turn, User} from '../models';
+import {BoxRepository, TurnRepository, UserRepository} from '../repositories';
 import {AuthService, Credentials, UserChangePassword, UserReset} from '../services/auth.service';
 import {EncryptDecrypt} from '../services/encrypt-decrypt.service';
+import {TurnService} from '../services/turn.service';
 
 
 
 export class UserController {
 
   authService: AuthService;
+  turnService: TurnService;
+
   constructor(
     @repository(UserRepository)
     public userRepository: UserRepository,
+    @repository(BoxRepository)
+    public boxRepository: BoxRepository,
+    @repository(TurnRepository)
+    public turnRepository: TurnRepository,
   ) {
     this.authService = new AuthService(this.userRepository)
+    this.turnService = new TurnService(this.turnRepository, boxRepository);
   }
 
   /*
@@ -46,7 +54,7 @@ export class UserController {
      "UserTokenStrategy”
   */
   @authenticate("UserTokenStrategy", "AdminTokenStrategy")
-  @post('/user/change-password', {
+  @post('/user/change-password/{id}', {
     responses: {
       '200': {
         description: 'reset password for user'
@@ -54,9 +62,10 @@ export class UserController {
     },
   })
   async changePassword(
+    @param.path.string('id') id: string,
     @requestBody() userChangePassword: UserChangePassword
   ): Promise<boolean> {
-    let r = await this.authService.ChangePassword(userChangePassword);
+    let r = await this.authService.ChangePassword(id, userChangePassword);
     return r;
   }
 
@@ -97,21 +106,47 @@ export class UserController {
       description: 'Credentials',
       required: true
     }) credentials: Credentials
-  ): Promise<Object> {
+  ): Promise<any> {
     let user = await this.authService.Identify(credentials);
-    if (user) {
-      if (user.isActive) {
-        let tk = await this.authService.GenerateToken(user);
-        return {
-          user,
-          token: tk
-        }
-      } else {
-        throw new HttpErrors[401]("El usuario no se encuentra activado.")
-      }
-    } else {
-      throw new HttpErrors[401]("El usuario o la clave es invalido.")
+    if (!user) throw new HttpErrors[401]("El usuario o la clave es invalido.");
+
+    if (!user.isActive) throw new HttpErrors[401]("El usuario no se encuentra activado.");
+
+    let turn = await this.turnService.thereCurrentShift(user);
+
+    if (!turn) {
+      let tk = await this.authService.GenerateToken(user);
+      turn = await this.turnService.openTurn(user, tk);
     }
+
+    return {user, turn};
+  }
+
+  /*
+    EndPoint @post(/user/logout)
+    Realiza todo lo necesario para el cierre del turno
+    sesión, recibe un objeto del tipo turn.
+   */
+  @post('/user/logout', {
+    responses: {
+      '200': {
+        description: 'logout'
+      },
+    },
+  })
+  async logout(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(Turn),
+        },
+      },
+    })
+    turn: Turn,
+  ): Promise<void> {
+
+    return await this.turnService.closeTurn(turn);
+
   }
 
   /*

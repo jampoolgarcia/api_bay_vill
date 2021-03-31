@@ -9,7 +9,6 @@ export * from './medicine.model';
 export * from './nurse.model';
 export * from './nursing-service.model';
 export * from './patient.model';
-export * from './payment-types.model';
 export * from './payment.model';
 export * from './product.model';
 export * from './specialty.model';

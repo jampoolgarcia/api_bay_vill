@@ -1,7 +1,6 @@
 import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {Doctor} from './doctor.model';
 import {Nurse} from './nurse.model';
-import {PaymentTypes} from './payment-types.model';
 import {Turn} from './turn.model';
 
 @model()
@@ -16,9 +15,6 @@ export class Payment extends Entity {
 
   @belongsTo(() => Turn)
   turnId: string;
-
-  @belongsTo(() => PaymentTypes)
-  paymentTypesId: string;
 
   @property({
     type: 'date',

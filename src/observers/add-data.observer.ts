@@ -7,8 +7,7 @@ import {
 } from '@loopback/core';
 import {repository} from '@loopback/repository';
 import {Box, ConfigTestLab, User} from '../models';
-import {PaymentTypes} from '../models/payment-types.model';
-import {BoxRepository, ConfigTestLabRepository, PaymentTypesRepository, UserRepository} from '../repositories';
+import {BoxRepository, ConfigTestLabRepository, UserRepository} from '../repositories';
 import {EncryptDecrypt} from '../services/encrypt-decrypt.service';
 
 /**
@@ -23,7 +22,6 @@ export class AddDataObserver implements LifeCycleObserver {
     @repository('UserRepository') private userRepo: UserRepository,
     @repository('BoxRepository') private boxRepo: BoxRepository,
     @repository('ConfigTestLabRepository') private configTestRepo: ConfigTestLabRepository,
-    @repository('PaymentTypesRepository') private paymentTypesRepo: PaymentTypesRepository,
   ) { }
 
 
@@ -51,8 +49,6 @@ export class AddDataObserver implements LifeCycleObserver {
     let countConfig = (await this.configTestRepo.count()).count;
     if (countConfig === 0) await this.createDefaultConfigTest();
 
-    let countPaymentTypes = (await this.paymentTypesRepo.count()).count;
-    if (countPaymentTypes === 0) await this.createPaymentTypes();
 
   }
 
@@ -100,16 +96,5 @@ export class AddDataObserver implements LifeCycleObserver {
 
   }
 
-  async createPaymentTypes() {
-    let paymentTypes: PaymentTypes[] = [
-      new PaymentTypes({name: "Efectivo", isWithdrawals: true}),
-      new PaymentTypes({name: "Transferecia", isWithdrawals: false}),
-      new PaymentTypes({name: "Tarjeta", isWithdrawals: false}),
-    ]
-
-    paymentTypes.forEach(async (paymentType) => {
-      await await this.paymentTypesRepo.create(paymentType);
-    });
-  }
 
 }

@@ -21,7 +21,7 @@ import {
   requestBody
 } from '@loopback/rest';
 import {Doctor, Payment} from '../models';
-import {DoctorRepository} from '../repositories';
+import {BoxRepository, DoctorRepository, PaymentRepository, TurnRepository} from '../repositories';
 import {PaymentService} from '../services/payment.service';
 
 export class DoctorController {
@@ -31,8 +31,16 @@ export class DoctorController {
   constructor(
     @repository(DoctorRepository)
     public doctorRepository: DoctorRepository,
+    @repository(TurnRepository)
+    public turnRepo: TurnRepository,
+    @repository(BoxRepository)
+    public boxRepo: BoxRepository,
+    @repository(PaymentRepository)
+    public payRepo: PaymentRepository,
   ) {
-    this.paymentService = new PaymentService();
+    this.paymentService = new PaymentService(
+      turnRepo, boxRepo, payRepo
+    );
   }
 
   @post('/doctor', {
@@ -135,6 +143,26 @@ export class DoctorController {
     return this.doctorRepository.findById(id, filter);
   }
 
+  @get('/doctor/{id}/details', {
+    responses: {
+      '200': {
+        description: 'Doctor model instance',
+        content: {
+          'application/json': {
+            schema: getModelSchemaRef(Doctor, {includeRelations: true}),
+          },
+        },
+      },
+    },
+  })
+  async findByIdDetails(
+    @param.path.string('id') id: string,
+    @param.filter(Doctor, {exclude: 'where'}) filter?: FilterExcludingWhere<Doctor>
+  ): Promise<Doctor> {
+    console.log(filter);
+    return this.doctorRepository.findById(id, filter);
+  }
+
   @patch('/doctor/{id}', {
     responses: {
       '204': {
@@ -159,16 +187,9 @@ export class DoctorController {
 
   @post('/doctor/{id}/pay', {
     responses: {
-      '200': {
-        description: 'payment model instance',
-        content: {
-          'application/json': {
-            schema: getModelSchemaRef(Payment,
-              {
-                title: 'New DoctorPay',
-                exclude: ['id', 'nurseId'],
-              })
-          }
+      responses: {
+        '200': {
+          description: 'Process'
         },
       },
     },
@@ -180,17 +201,18 @@ export class DoctorController {
         'application/json': {
           schema: getModelSchemaRef(Payment, {
             //title: 'New Pay',
-            exclude: ['id', 'nurseId'],
+            exclude: ['id', 'nurseId', 'doctorId'],
           }),
         },
       },
     })
     payment: Omit<Payment, 'id' | 'nurseId'>,
-  ): Promise<Doctor | unknown> {
-
-    return (<Doctor | unknown>this.paymentService.addPaymentEntity(id, payment, this.doctorRepository));
+  ): Promise<boolean> {
+    payment.doctorId = id;
+    return this.paymentService.addPaymentEntity(id, payment, this.doctorRepository);
 
   }
+
 
 
   @put('/doctor/{id}', {
