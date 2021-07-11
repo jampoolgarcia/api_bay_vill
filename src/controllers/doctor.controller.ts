@@ -143,6 +143,27 @@ export class DoctorController {
     return this.doctorRepository.findById(id, filter);
   }
 
+  @get('/doctor/search/{search}', {
+    responses: {
+      '200': {
+        description: 'Array of Doctor model instances',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'array',
+              items: getModelSchemaRef(Doctor, {includeRelations: true}),
+            },
+          },
+        },
+      },
+    },
+  })
+  async findBySearch(
+    @param.path.string('search') search: string,
+  ): Promise<Doctor[]> {
+    return this.doctorRepository.find({where: {name: 'large'}});
+  }
+
   @get('/doctor/{id}/details', {
     responses: {
       '200': {
@@ -157,10 +178,42 @@ export class DoctorController {
   })
   async findByIdDetails(
     @param.path.string('id') id: string,
-    @param.filter(Doctor, {exclude: 'where'}) filter?: FilterExcludingWhere<Doctor>
   ): Promise<Doctor> {
-    console.log(filter);
-    return this.doctorRepository.findById(id, filter);
+
+    return this.doctorRepository.findById(id,
+      {
+        include: [{
+          relation: "specialty"
+        },
+        {
+          relation: "payments",
+          scope: {
+            include: [{
+              relation: "turn",
+              scope: {
+                include: [{
+                  relation: "user"
+                }]
+              }
+            }]
+          }
+        },
+        {
+          relation: "consultation",
+          scope: {
+            include: [{
+              relation: "turn",
+              scope: {
+                include: [{
+                  relation: "user"
+                }]
+              }
+            }]
+          }
+        }
+        ]
+      }
+    );
   }
 
   @patch('/doctor/{id}', {

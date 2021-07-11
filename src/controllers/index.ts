@@ -13,4 +13,4 @@ export * from './test-lab.controller';
 export * from './ticket.controller';
 export * from './user.controller';
 
-
+export * from './search.controller';

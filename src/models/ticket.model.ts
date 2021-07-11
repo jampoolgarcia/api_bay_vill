@@ -2,6 +2,7 @@ import {Entity, model, property, belongsTo, hasMany} from '@loopback/repository'
 import {Patient} from './patient.model';
 import {Consultation} from './consultation.model';
 import {BillPayment} from './bill-payment.model';
+import {Product} from './product.model';
 
 @model()
 export class Ticket extends Entity {
@@ -32,6 +33,9 @@ export class Ticket extends Entity {
 
   @hasMany(() => BillPayment)
   billPayment: BillPayment[];
+
+  @hasMany(() => Product)
+  product: Product[];
 
   constructor(data?: Partial<Ticket>) {
     super(data);

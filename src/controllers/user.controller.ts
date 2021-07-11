@@ -175,10 +175,19 @@ export class UserController {
     })
     user: Omit<User, 'id'>,
   ): Promise<User> {
+
+    let unique = await this.userRepository.find({
+      where: {userName: user.userName}
+    })
+
+    if(unique.length > 0) throw new HttpErrors[404]('El usuario se encuentra en uso.')
+    
     user.password = new EncryptDecrypt().Encrypt(user.password);
     let u = await this.userRepository.create(user);
     u.password = "";
     return u;
+    
+    
   }
 
 
@@ -309,6 +318,45 @@ export class UserController {
     @param.filter(User, {exclude: 'where'}) filter?: FilterExcludingWhere<User>
   ): Promise<User> {
     return this.userRepository.findById(id, filter);
+  }
+
+
+  /*
+    EndPoint @get(/user/{id})
+    Devuelve el usuario con el id indicado en el url.
+    Nota: este Endpoint está protegido por una estrategia
+    de seguridad con el nombre: "AdminTokenStrategy”
+  */
+  @authenticate("AdminTokenStrategy")
+  @get('/user/search/{search}', {
+    responses: {
+      '200': {
+        description: 'array of user model instance',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'array',
+              items: getModelSchemaRef(User, {includeRelations: true}),
+            },
+          },
+        },
+      },
+    },
+  })
+  async findBySearch(
+    @param.path.string('search') search: string
+  ): Promise<User[]> {
+    return this.userRepository.find(
+      {
+        where: {
+          or: [
+            {firstName: {like: search}},
+            {lastName: {like: search}},
+            {userName: {like: search}}
+          ]
+        }
+      }
+    );
   }
 
 

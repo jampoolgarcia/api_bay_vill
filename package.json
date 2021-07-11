@@ -34,7 +34,19 @@
         "rebuild": "npm run clean && npm run build",
         "prestart": "npm run rebuild",
         "start": "node -r source-map-support/register .",
+        "dev": "nodemon dist/index.ts --watch src",
         "clean": "lb-clean dist *.tsbuildinfo .eslintcache"
+    },
+    "nodemonConfig": {
+        "verbose": true,
+        "watch": [
+            "src/"
+        ],
+        "ignore": [
+            "dist/*"
+        ],
+        "ext": "ts",
+        "exec": "npm start"
     },
     "repository": {
         "type": "git",
@@ -76,6 +88,7 @@
         "@types/passport-http": "^0.3.8",
         "@types/passport-http-bearer": "^1.0.36",
         "eslint": "^7.15.0",
+        "nodemon": "^2.0.7",
         "source-map-support": "^0.5.19",
         "typescript": "~4.1.2"
     }

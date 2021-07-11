@@ -4,26 +4,32 @@ import {
   Filter,
   FilterExcludingWhere,
   repository,
-  Where,
+  Where
 } from '@loopback/repository';
 import {
-  post,
-  param,
-  get,
-  getModelSchemaRef,
-  patch,
+  del, get,
+  getModelSchemaRef, param,
+
+
+  patch, post,
+
+
+
+
   put,
-  del,
-  requestBody,
+
+  requestBody
 } from '@loopback/rest';
-import {Medicine} from '../models';
-import {MedicineRepository} from '../repositories';
+import {Medicine, Product} from '../models';
+import {MedicineRepository, ProductRepository} from '../repositories';
 
 export class MedicineController {
   constructor(
     @repository(MedicineRepository)
-    public medicineRepository : MedicineRepository,
-  ) {}
+    public medicineRepository: MedicineRepository,
+    @repository(ProductRepository)
+    public productRepository: ProductRepository,
+  ) { }
 
   @post('/medicine', {
     responses: {
@@ -83,6 +89,29 @@ export class MedicineController {
   ): Promise<Medicine[]> {
     return this.medicineRepository.find(filter);
   }
+
+  @get('/medicine/kardex/{date}', {
+    responses: {
+      '200': {
+        description: 'Array of Product model instances',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'array',
+              items: getModelSchemaRef(Product, {includeRelations: true}),
+            },
+          },
+        },
+      },
+    },
+  })
+  async findProductDay(
+    @param.path.string('date') date: Date,
+  ): Promise<Product[]> {
+    console.log(date);
+    return this.productRepository.find({"where":{"date":{"gt":"2014-04-01T18:30:00.000Z"}}});
+  }
+
 
   @patch('/medicine', {
     responses: {

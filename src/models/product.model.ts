@@ -1,4 +1,6 @@
-import {Entity, model, property} from '@loopback/repository';
+import {Entity, model, property, belongsTo} from '@loopback/repository';
+import {Medicine} from './medicine.model';
+import {Ticket} from './ticket.model';
 
 @model()
 export class Product extends Entity {
@@ -27,6 +29,11 @@ export class Product extends Entity {
   })
   date: string;
 
+  @belongsTo(() => Medicine)
+  medicineId: string;
+
+  @belongsTo(() => Ticket)
+  ticketId: string;
 
   constructor(data?: Partial<Product>) {
     super(data);
